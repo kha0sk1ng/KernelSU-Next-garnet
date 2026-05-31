@@ -1,4 +1,5 @@
-# AnyKernel3 Ramdisk Mod Script
+### AnyKernel3 Ramdisk Mod Script
+
 properties() { '
 kernel.string=KernelSU-Next + SuSFS for Poco X6 5G (garnet)
 do.devicecheck=1
@@ -7,17 +8,25 @@ do.systemless=1
 do.cleanup=1
 do.cleanuponabort=0
 device.name1=garnet
-device.name2=
 supported.versions=
 supported.patchlevels=
+supported.vendorpatchlevels=
 '; }
 
-block=/dev/block/bootdevice/by-name/boot;
-is_slot_device=1;
-ramdisk_compression=auto;
-patch_vbmeta_flag=auto;
+BLOCK=boot
+IS_SLOT_DEVICE=auto
+RAMDISK_COMPRESSION=auto
+PATCH_VBMETA_FLAG=auto
+NO_BLOCK_DISPLAY=1
+NO_MAGISK_CHECK=1
 
-. tools/ak3-core.sh;
-set_perm_recursive 0 0 755 644 $ramdisk;
-split_boot;
-flash_boot;
+. tools/ak3-core.sh
+
+ui_print " "
+ui_print "- Kernel: $(strings "${AKHOME}"/Image 2>/dev/null | grep -E -m1 'Linux version.*#' | awk '{print $3}')"
+ui_print "- Device: Poco X6 5G (garnet)"
+ui_print "- KernelSU-Next + SuSFS v2.1.0"
+ui_print " "
+
+split_boot
+flash_boot
