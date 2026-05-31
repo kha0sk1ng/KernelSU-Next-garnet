@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare release archive
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          ZIP_NAME="KernelSU-Next-SuSFS-garnet-${TAG}.zip"
+          zip -r9 "${ZIP_NAME}" . -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: KernelSU-Next-SuSFS-garnet-${{ github.ref_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
