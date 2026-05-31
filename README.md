@@ -1,49 +1,84 @@
-# PureKernel for garnet
+<div align="center">
 
-PureKernel for garnet is an AnyKernel package for the Poco X6 5G (`garnet`) with KernelSU Next and SuSFS support.
-
-## Release format
-
-GitHub Actions builds a release when you push a tag that starts with `v`.
-
-- Release title: `PureKernel {version}`
-- Asset name: `PureKernel-KSUNext-SuSFS-garnet-v{version}.zip`
-
-Example:
-- tag: `v1.1.0`
-- release title: `PureKernel 1.1.0`
-- asset: `PureKernel-KSUNext-SuSFS-garnet-v1.1.0.zip`
-
-## Repository layout
-
-The repo root contains the files that go into the flashable package:
-
-- `Image` — kernel binary
-- `anykernel.sh` — packaging/install script
-- `banner` — flash banner
-- `version` — version string shown by the installer
-- `tools/` — helper binaries
-- `modules/` — optional modules content
-- `patch/` — patch files
-- `ramdisk/` — ramdisk additions
-- `META-INF/` — recovery installer metadata
-- `LICENSE` — required license file
-
-## How to use
-
-1. Pick a tag version, for example `v1.1.0`.
-2. Push the tag to GitHub.
-3. Download the created release asset from the GitHub Release page.
-4. Flash the zip from recovery.
-
-## Build command used by release workflow
-
-```bash
-zip -r9 KernelSU-Next-SuSFS-garnet-${TAG}.zip . -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
+```
+██████╗ ██╗   ██╗██████╗ ███████╗
+██╔══██╗██║   ██║██╔══██╗██╔════╝
+██████╔╝██║   ██║██████╔╝█████╗  
+██╔═══╝ ██║   ██║██╔══██╗██╔══╝  
+██║     ╚██████╔╝██║  ██║███████╗
+╚═╝      ╚═════╝ ╚═╝  ╚═╝╚══════╝
+    K E R N E L
 ```
 
-## Notes
+**GKI Kernel for Poco X6 5G** · `android12-5.10` · `garnet`
 
-- `README.md` is excluded from the release archive.
-- The release workflow uses `GITHUB_TOKEN`.
-- The repository name is `PureKernel-for-garnet`.
+[![Release](https://img.shields.io/github/v/release/kha0sk1ng/KernelSU-Next-garnet?style=flat-square&color=white&labelColor=black&label=release)](https://github.com/kha0sk1ng/KernelSU-Next-garnet/releases)
+[![KernelSU Next](https://img.shields.io/badge/KernelSU-Next-black?style=flat-square&labelColor=white&color=black)](https://github.com/rifsxd/KernelSU-Next)
+[![SuSFS](https://img.shields.io/badge/SuSFS-v2.1.0-black?style=flat-square&labelColor=white&color=black)](https://gitlab.com/simonpunk/susfs4ksu)
+
+</div>
+
+---
+
+## What is PureKernel?
+
+PureKernel is a clean GKI kernel build for the **Poco X6 5G (garnet)** with **KernelSU Next** and **SuSFS** baked in. No bloat. No unnecessary patches. Just root.
+
+---
+
+## Features
+
+| Feature | Details |
+|---|---|
+| **Base** | AOSP GKI `android12-5.10` |
+| **Root** | KernelSU Next `33168` |
+| **Stealth** | SuSFS `v2.1.0` |
+| **Format** | AnyKernel3 flashable zip |
+
+---
+
+## Requirements
+
+- Poco X6 5G (`garnet`)
+- HyperOS `3.0.301.0` · Android 12-5.10
+- Unlocked bootloader
+- OrangeFox Recovery (or any AnyKernel3-compatible recovery)
+
+---
+
+## Installation
+
+1. Download the latest zip from [Releases](https://github.com/kha0sk1ng/KernelSU-Next-garnet/releases)
+2. Boot into OrangeFox Recovery
+3. Flash the zip
+4. Reboot
+
+> **Note:** This is a GKI kernel. Your existing vendor modules remain untouched.
+
+---
+
+## After Flashing
+
+Install the **KernelSU Next** manager app to manage root access:
+
+→ [KernelSU Next Releases](https://github.com/rifsxd/KernelSU-Next/releases)
+
+---
+
+## Build Info
+
+```
+Kernel:   Linux 5.10.256
+KSU:      KernelSU Next 33168
+SuSFS:    v2.1.0
+Device:   garnet (Poco X6 5G)
+Built on: Oracle Cloud ARM · Ubuntu 24.04
+```
+
+---
+
+<div align="center">
+
+made by [`kha0sk1ng`](https://github.com/kha0sk1ng)
+
+</div>
