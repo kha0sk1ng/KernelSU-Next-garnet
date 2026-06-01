@@ -1,0 +1,97 @@
+name: Build PureKernel Lite
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout AnyKernel3
+        uses: actions/checkout@v4
+        with:
+          path: AnyKernel3
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git python3 libssl-dev flex bison bc \
+            make libelf-dev binutils-aarch64-linux-gnu
+
+      - name: Download clang-r416183b
+        run: |
+          mkdir -p clang
+          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android12-5.10/clang-r416183b.tar.gz -O clang.tar.gz
+          tar -xf clang.tar.gz -C clang
+          echo "$PWD/clang/bin" >> $GITHUB_PATH
+
+      - name: Clone kernel source
+        run: |
+          git clone --depth=1 \
+            https://android.googlesource.com/kernel/common \
+            -b android12-5.10-2025-05 kernel
+
+      - name: Apply KernelSU Next
+        run: |
+          cd kernel
+          curl -LSs https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh | bash -
+
+      - name: Apply SuSFS
+        run: |
+          cd kernel
+          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git
+          cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
+          patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
+          cp -r susfs4ksu/fs/susfs.c fs/
+          cp -r susfs4ksu/include/linux/susfs.h include/linux/
+
+      - name: Configure kernel (Lite)
+        run: |
+          cd kernel
+          cat >> arch/arm64/configs/gki_defconfig << 'EOF'
+
+          # PureKernel Lite Optimizations
+          CONFIG_TCP_CONG_BBR=y
+          CONFIG_DEFAULT_TCP_CONG="bbr"
+          CONFIG_NET_SCH_FQ=y
+          CONFIG_MQ_IOSCHED_KYBER=y
+          EOF
+
+      - name: Build kernel
+        run: |
+          cd kernel
+          make -j$(nproc) \
+            ARCH=arm64 \
+            CC=clang \
+            LLVM=1 \
+            LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            O=out \
+            gki_defconfig
+          make -j$(nproc) \
+            ARCH=arm64 \
+            CC=clang \
+            LLVM=1 \
+            LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            O=out
+
+      - name: Package zip
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          cp kernel/out/arch/arm64/boot/Image AnyKernel3/Image
+          cd AnyKernel3
+          zip -r9 ../PureKernel-Lite-garnet-${VERSION}.zip . \
+            -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: PureKernel-Lite-garnet-*.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
