@@ -21,11 +21,10 @@ jobs:
           sudo apt update
           sudo apt install -y git python3 libssl-dev flex bison bc make libelf-dev binutils-aarch64-linux-gnu
 
-          # Using refs/heads/master branch to fix the 404 error from image 22433.jpg
       - name: Download clang-r416183b
         run: |
           mkdir -p clang
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r416183b.tar.gz -O clang.tar.gz
+          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-12.0.0_r1/clang-r416183b.tar.gz -O clang.tar.gz
           tar -xf clang.tar.gz -C clang
           echo "$PWD/clang/bin" >> $GITHUB_PATH
 
@@ -70,7 +69,6 @@ jobs:
           cd AnyKernel3
           zip -r9 ../PureKernel-Lite-garnet-${VERSION}.zip . -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
 
-          # Added draft: true to fulfill your requirement
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
