@@ -55,13 +55,21 @@ jobs:
 
       - name: Apply SuSFS
         run: |
-          # Apply SuSFS patches
+          # Apply SuSFS patches to both Kernel and KernelSU Next
           cd kernel
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
+          
+          # 1. Patch the main kernel
           cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
           patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
           find susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
           find susfs4ksu -type f -name "susfs.h" -exec cp {} include/linux/ \;
+          
+          # 2. Patch KernelSU Next to integrate with SuSFS hooks
+          KSU_DIR=$(find . -maxdepth 1 -type d -name "KernelSU*" | head -n 1)
+          cd $KSU_DIR
+          cp ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
+          patch -p1 < 10_enable_susfs_for_ksu.patch
 
       - name: Configure kernel (Lite)
         run: |
