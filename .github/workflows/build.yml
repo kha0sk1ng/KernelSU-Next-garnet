@@ -21,12 +21,22 @@ jobs:
           sudo apt update
           sudo apt install -y git python3 libssl-dev flex bison bc make libelf-dev binutils-aarch64-linux-gnu
 
+      - name: Cache Clang
+        id: cache-clang
+        uses: actions/cache@v4
+        with:
+          path: clang
+          key: ${{ runner.os }}-clang-r416183b
+
       - name: Download clang-r416183b
+        if: steps.cache-clang.outputs.cache-hit != 'true'
         run: |
           mkdir -p clang
           wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-12.0.0_r1/clang-r416183b.tar.gz -O clang.tar.gz
           tar -xf clang.tar.gz -C clang
-          echo "$PWD/clang/bin" >> $GITHUB_PATH
+
+      - name: Setup Clang Path
+        run: echo "$PWD/clang/bin" >> $GITHUB_PATH
 
       - name: Clone kernel source
         run: |
@@ -40,21 +50,22 @@ jobs:
       - name: Apply SuSFS
         run: |
           cd kernel
-          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git
-          find susfs4ksu -type f -name "*5.10*.patch" -exec cp {} . \;
-          patch -p1 < *.patch
-          find susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
-          find susfs4ksu -type f -name "susfs.h" -exec cp {} include/linux/ \;
+          # Clone the specific branch that contains the patches for Android 12 5.10
+          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
+          cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
+          patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
+          cp susfs4ksu/fs/susfs.c fs/
+          cp susfs4ksu/include/linux/susfs.h include/linux/
 
       - name: Configure kernel (Lite)
         run: |
           cd kernel
-          cat >> arch/arm64/configs/gki_defconfig << 'EOF'
+          cat >> arch/arm64/configs/gki_defconfig << 'EOF_CONF'
           CONFIG_TCP_CONG_BBR=y
           CONFIG_DEFAULT_TCP_CONG="bbr"
           CONFIG_NET_SCH_FQ=y
           CONFIG_MQ_IOSCHED_KYBER=y
-          EOF
+          EOF_CONF
 
       - name: Build kernel
         run: |
