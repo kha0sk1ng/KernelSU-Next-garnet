@@ -63,14 +63,17 @@ jobs:
 
       - name: Configure kernel (Lite)
         run: |
-          # Append optimizations to defconfig
           cd kernel
+          # Append optimizations to defconfig
           cat >> arch/arm64/configs/gki_defconfig << 'EOF_CONF'
           CONFIG_TCP_CONG_BBR=y
           CONFIG_DEFAULT_TCP_CONG="bbr"
           CONFIG_NET_SCH_FQ=y
           CONFIG_MQ_IOSCHED_KYBER=y
           EOF_CONF
+          
+          # Force Thin LTO for a balance between performance and compile time
+          ./scripts/config --file arch/arm64/configs/gki_defconfig -e LTO_CLANG_THIN -d LTO_CLANG_FULL -d LTO_NONE
 
       - name: Build kernel
         run: |
