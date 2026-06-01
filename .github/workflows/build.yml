@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    # Grant permissions to create releases and upload assets
     permissions:
       contents: write
 
@@ -21,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Install necessary packages for kernel compilation
+          # Install dependencies
           sudo apt update
           sudo apt install -y git python3 libssl-dev flex bison bc make libelf-dev binutils-aarch64-linux-gnu
 
@@ -35,7 +34,7 @@ jobs:
       - name: Download clang-r416183b
         if: steps.cache-clang.outputs.cache-hit != 'true'
         run: |
-          # Download correct clang version if not cached
+          # Download clang if cache missed
           mkdir -p clang
           wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-12.0.0_r1/clang-r416183b.tar.gz -O clang.tar.gz
           tar -xf clang.tar.gz -C clang
@@ -45,18 +44,18 @@ jobs:
 
       - name: Clone kernel source
         run: |
-          # Clone specific branch to avoid KMI mismatches
+          # Clone repository
           git clone --depth=1 https://android.googlesource.com/kernel/common -b android12-5.10-2025-05 kernel
 
       - name: Apply KernelSU Next
         run: |
-          # Inject KernelSU Next
+          # Apply KSU Next
           cd kernel
           curl -LSs https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh | bash -
 
       - name: Apply SuSFS
         run: |
-          # Clone and apply SuSFS patches dynamically finding the source files
+          # Apply SuSFS patches
           cd kernel
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
           cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
@@ -67,27 +66,42 @@ jobs:
       - name: Configure kernel (Lite)
         run: |
           cd kernel
-          # Append optimizations to defconfig
+          # Append network/IO optimizations and enable all SuSFS features
           cat >> arch/arm64/configs/gki_defconfig << 'EOF_CONF'
+          
+          # PureKernel Optimizations
           CONFIG_TCP_CONG_BBR=y
           CONFIG_DEFAULT_TCP_CONG="bbr"
           CONFIG_NET_SCH_FQ=y
           CONFIG_MQ_IOSCHED_KYBER=y
+          
+          # Enable SuSFS Features
+          CONFIG_KSU_SUSFS=y
+          CONFIG_KSU_SUSFS_SUS_PATH=y
+          CONFIG_KSU_SUSFS_SUS_MOUNT=y
+          CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y
+          CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y
+          CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y
+          CONFIG_KSU_SUSFS_SPOOF_UNAME=y
+          CONFIG_KSU_SUSFS_ENABLE_HIDE_KSU_SUSFS_SYMBOLS=y
+          CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
+          CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+          CONFIG_KSU_SUSFS_SUS_SU=y
           EOF_CONF
           
-          # Force Thin LTO for a balance between performance and compile time
+          # Force Thin LTO
           ./scripts/config --file arch/arm64/configs/gki_defconfig -e LTO_CLANG_THIN -d LTO_CLANG_FULL -d LTO_NONE
 
       - name: Build kernel
         run: |
-          # Compile the kernel
+          # Compile kernel
           cd kernel
           make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out gki_defconfig
           make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out
 
       - name: Package zip
         run: |
-          # Package compiled Image into AnyKernel3 zip
+          # Package AnyKernel3
           VERSION=${GITHUB_REF_NAME}
           cp kernel/out/arch/arm64/boot/Image AnyKernel3/Image
           cd AnyKernel3
