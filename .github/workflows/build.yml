@@ -61,6 +61,7 @@ jobs:
           patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
           find susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
           find susfs4ksu -type f -name "susfs.h" -exec cp {} include/linux/ \;
+          find susfs4ksu -type f -name "susfs_def.h" -exec cp {} include/linux/ \;
 
       - name: Configure kernel (Lite)
         run: |
