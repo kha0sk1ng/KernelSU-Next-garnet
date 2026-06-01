@@ -19,21 +19,19 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y git python3 libssl-dev flex bison bc \
-            make libelf-dev binutils-aarch64-linux-gnu
+          sudo apt install -y git python3 libssl-dev flex bison bc make libelf-dev binutils-aarch64-linux-gnu
 
+          # Using refs/heads/master branch to fix the 404 error from image 22433.jpg
       - name: Download clang-r416183b
         run: |
           mkdir -p clang
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android12-5.10/clang-r416183b.tar.gz -O clang.tar.gz
+          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r416183b.tar.gz -O clang.tar.gz
           tar -xf clang.tar.gz -C clang
           echo "$PWD/clang/bin" >> $GITHUB_PATH
 
       - name: Clone kernel source
         run: |
-          git clone --depth=1 \
-            https://android.googlesource.com/kernel/common \
-            -b android12-5.10-2025-05 kernel
+          git clone --depth=1 https://android.googlesource.com/kernel/common -b android12-5.10-2025-05 kernel
 
       - name: Apply KernelSU Next
         run: |
@@ -53,8 +51,6 @@ jobs:
         run: |
           cd kernel
           cat >> arch/arm64/configs/gki_defconfig << 'EOF'
-
-          # PureKernel Lite Optimizations
           CONFIG_TCP_CONG_BBR=y
           CONFIG_DEFAULT_TCP_CONG="bbr"
           CONFIG_NET_SCH_FQ=y
@@ -64,34 +60,22 @@ jobs:
       - name: Build kernel
         run: |
           cd kernel
-          make -j$(nproc) \
-            ARCH=arm64 \
-            CC=clang \
-            LLVM=1 \
-            LLVM_IAS=1 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            O=out \
-            gki_defconfig
-          make -j$(nproc) \
-            ARCH=arm64 \
-            CC=clang \
-            LLVM=1 \
-            LLVM_IAS=1 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            O=out
+          make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out gki_defconfig
+          make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out
 
       - name: Package zip
         run: |
           VERSION=${GITHUB_REF_NAME}
           cp kernel/out/arch/arm64/boot/Image AnyKernel3/Image
           cd AnyKernel3
-          zip -r9 ../PureKernel-Lite-garnet-${VERSION}.zip . \
-            -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
+          zip -r9 ../PureKernel-Lite-garnet-${VERSION}.zip . -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
 
+          # Added draft: true to fulfill your requirement
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: PureKernel-Lite-garnet-*.zip
           generate_release_notes: true
+          draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
