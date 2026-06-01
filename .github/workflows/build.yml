@@ -54,7 +54,9 @@ jobs:
           cd kernel
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
           
-          # Patch ONLY the main kernel. KernelSU Next natively supports SuSFS.
+          # Apply SuSFS Kconfig entries to KernelSU-Next (required even with native support)
+          # Then patch the main kernel source
+          cd KernelSU-Next && patch -p1 < ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch || true && cd ..
           cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
           patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
           find susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
