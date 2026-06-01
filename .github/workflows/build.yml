@@ -41,10 +41,10 @@ jobs:
         run: |
           cd kernel
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git
-          cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
-          patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
-          cp -r susfs4ksu/fs/susfs.c fs/
-          cp -r susfs4ksu/include/linux/susfs.h include/linux/
+          cp $(find susfs4ksu -name "*50_add_susfs_in_gki-android12-5.10.patch*") .
+          patch -p1 < *50_add_susfs_in_gki-android12-5.10.patch*
+          cp $(find susfs4ksu -name "susfs.c") fs/
+          cp $(find susfs4ksu -name "susfs.h") include/linux/
 
       - name: Configure kernel (Lite)
         run: |
