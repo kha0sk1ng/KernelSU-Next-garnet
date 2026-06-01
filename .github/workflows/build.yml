@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    # Grant permissions to create releases and upload assets
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout AnyKernel3
