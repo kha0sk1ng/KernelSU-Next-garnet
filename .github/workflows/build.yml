@@ -18,6 +18,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # Install necessary packages for kernel compilation
           sudo apt update
           sudo apt install -y git python3 libssl-dev flex bison bc make libelf-dev binutils-aarch64-linux-gnu
 
@@ -31,6 +32,7 @@ jobs:
       - name: Download clang-r416183b
         if: steps.cache-clang.outputs.cache-hit != 'true'
         run: |
+          # Download correct clang version if not cached
           mkdir -p clang
           wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-12.0.0_r1/clang-r416183b.tar.gz -O clang.tar.gz
           tar -xf clang.tar.gz -C clang
@@ -40,25 +42,28 @@ jobs:
 
       - name: Clone kernel source
         run: |
+          # Clone specific branch to avoid KMI mismatches
           git clone --depth=1 https://android.googlesource.com/kernel/common -b android12-5.10-2025-05 kernel
 
       - name: Apply KernelSU Next
         run: |
+          # Inject KernelSU Next
           cd kernel
           curl -LSs https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh | bash -
 
       - name: Apply SuSFS
         run: |
+          # Clone and apply SuSFS patches dynamically finding the source files
           cd kernel
-          # Clone the specific branch that contains the patches for Android 12 5.10
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
           cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
           patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
-          cp susfs4ksu/fs/susfs.c fs/
-          cp susfs4ksu/include/linux/susfs.h include/linux/
+          find susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
+          find susfs4ksu -type f -name "susfs.h" -exec cp {} include/linux/ \;
 
       - name: Configure kernel (Lite)
         run: |
+          # Append optimizations to defconfig
           cd kernel
           cat >> arch/arm64/configs/gki_defconfig << 'EOF_CONF'
           CONFIG_TCP_CONG_BBR=y
@@ -69,12 +74,14 @@ jobs:
 
       - name: Build kernel
         run: |
+          # Compile the kernel
           cd kernel
           make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out gki_defconfig
           make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out
 
       - name: Package zip
         run: |
+          # Package compiled Image into AnyKernel3 zip
           VERSION=${GITHUB_REF_NAME}
           cp kernel/out/arch/arm64/boot/Image AnyKernel3/Image
           cd AnyKernel3
