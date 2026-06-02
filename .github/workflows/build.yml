@@ -47,7 +47,7 @@ jobs:
       - name: Apply KernelSU Next
         run: |
           cd kernel
-          curl -LSs https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh | bash -
+          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
 
       - name: Apply SuSFS
         run: |
@@ -56,7 +56,6 @@ jobs:
           
           # Apply SuSFS Kconfig entries to KernelSU-Next (required even with native support)
           # Then patch the main kernel source
-          cd KernelSU-Next && filterdiff -i '*/Kconfig' ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch | patch -p1 && cd ..
           cp susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch .
           patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
           find susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
