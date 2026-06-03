@@ -44,23 +44,19 @@ jobs:
         run: |
           git clone --depth=1 https://android.googlesource.com/kernel/common -b android12-5.10-2025-05 kernel
 
-      - name: Apply SukiSU-Ultra
+      - name: Apply KernelSU-Next (pershoot/next-susfs)
         run: |
           cd kernel
-          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -
+          curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/next-susfs/kernel/setup.sh" | bash -s next-susfs
 
       - name: Apply SuSFS
         run: |
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
           cd kernel
-          # Apply susfs Kconfig + hooks to SukiSU-Ultra
-          cd KernelSU && patch -p1 < ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch || true && cd ..
-          # Copy susfs source files
           find ../susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
           find ../susfs4ksu -type f -name "susfs.h" -exec cp {} include/linux/ \;
           find ../susfs4ksu -type f -name "susfs_def.h" -exec cp {} include/linux/ \;
-          # Apply susfs kernel patches
-          patch -p1 -F 3 < ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch || true
+          patch -p1 -F 3 < ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch
 
       - name: Configure kernel (Lite)
         run: |
@@ -73,7 +69,7 @@ jobs:
           CONFIG_NET_SCH_FQ=y
           CONFIG_MQ_IOSCHED_KYBER=y
 
-          # SukiSU-Ultra + SuSFS
+          # SuSFS
           CONFIG_KSU_SUSFS=y
           CONFIG_KSU_SUSFS_SUS_PATH=y
           CONFIG_KSU_SUSFS_SUS_MOUNT=y
