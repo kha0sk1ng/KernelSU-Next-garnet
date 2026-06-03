@@ -47,12 +47,11 @@ jobs:
       - name: Apply SukiSU-Ultra
         run: |
           cd kernel
-          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
+          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -
 
       - name: Apply SuSFS
         run: |
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
-          git clone --depth=1 https://github.com/ShirkNeko/SukiSU_patch.git
           cd kernel
           # Copy susfs source files
           find ../susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
@@ -60,8 +59,6 @@ jobs:
           find ../susfs4ksu -type f -name "susfs_def.h" -exec cp {} include/linux/ \;
           # Apply susfs kernel patches
           patch -p1 -F 3 < ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch || true
-          # Apply SukiSU-Ultra manual hooks
-          patch -p1 -F 3 < ../SukiSU_patch/hooks/scope_min_manual_hooks_v1.6.patch || true
 
       - name: Configure kernel (Lite)
         run: |
@@ -75,7 +72,6 @@ jobs:
           CONFIG_MQ_IOSCHED_KYBER=y
 
           # SukiSU-Ultra + SuSFS
-          CONFIG_KSU_MANUAL_HOOK=y
           CONFIG_KSU_SUSFS=y
           CONFIG_KSU_SUSFS_SUS_PATH=y
           CONFIG_KSU_SUSFS_SUS_MOUNT=y
