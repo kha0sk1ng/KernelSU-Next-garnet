@@ -47,11 +47,12 @@ jobs:
       - name: Apply KernelSU-Next (pershoot/next-susfs)
         run: |
           cd kernel
-          curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/next-susfs/kernel/setup.sh" | bash -s next-susfs
+          curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/next-susfs/kernel/setup.sh" | bash -s f1b64f440f3cd170e2a86d7816bef26fbdee1caa
 
       - name: Apply SuSFS
         run: |
-          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
+          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
+          cd susfs4ksu && git checkout 86114db0c49f20fa7857b8b559f3ab87cbc2d00d && cd ..
           cd kernel
           find ../susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
           find ../susfs4ksu -type f -name "susfs.h" -exec cp {} include/linux/ \;
