@@ -53,6 +53,8 @@ jobs:
         run: |
           git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10
           cd kernel
+          # Apply susfs Kconfig + hooks to SukiSU-Ultra
+          cd KernelSU && patch -p1 < ../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch || true && cd ..
           # Copy susfs source files
           find ../susfs4ksu -type f -name "susfs.c" -exec cp {} fs/ \;
           find ../susfs4ksu -type f -name "susfs.h" -exec cp {} include/linux/ \;
