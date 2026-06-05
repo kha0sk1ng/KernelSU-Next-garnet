@@ -44,10 +44,10 @@ jobs:
         run: |
           git clone --depth=1 https://android.googlesource.com/kernel/common -b android12-5.10-2025-05 kernel
 
-      - name: Apply KernelSU-Next (pershoot/next-susfs)
+      - name: Apply KernelSU-Next (pershoot/dev-susfs)
         run: |
           cd kernel
-          curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/next-susfs/kernel/setup.sh" | bash -s f1b64f440f3cd170e2a86d7816bef26fbdee1caa
+          curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/dev-susfs/kernel/setup.sh" | bash -s dev-susfs
 
       - name: Apply SuSFS
         run: |
