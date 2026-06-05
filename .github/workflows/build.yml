@@ -1,4 +1,4 @@
-name: Build PureKernel Lite
+name: Build PureKernel
 
 on:
   push:
@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+    strategy:
+      matrix:
+        profile: [Lite, Medium, Full]
 
     steps:
       - name: Checkout AnyKernel3
@@ -59,18 +62,11 @@ jobs:
           find ../susfs4ksu -type f -name "susfs_def.h" -exec cp {} include/linux/ \;
           patch -p1 -F 3 < ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch
 
-      - name: Configure kernel (Lite)
+      - name: Configure kernel (${{ matrix.profile }})
         run: |
           cd kernel
-          cat >> arch/arm64/configs/gki_defconfig << 'EOF_CONF'
-
-          # PureKernel Optimizations
-          CONFIG_TCP_CONG_BBR=y
-          CONFIG_DEFAULT_TCP_CONG="bbr"
-          CONFIG_NET_SCH_FQ=y
-          CONFIG_MQ_IOSCHED_KYBER=y
-
-          # SuSFS
+          cat >> arch/arm64/configs/gki_defconfig << 'EOF'
+          # KSU + SuSFS
           CONFIG_KSU_SUSFS=y
           CONFIG_KSU_SUSFS_SUS_PATH=y
           CONFIG_KSU_SUSFS_SUS_MOUNT=y
@@ -82,28 +78,79 @@ jobs:
           CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
           CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
           CONFIG_KSU_SUSFS_SUS_SU=y
+          # Networking
+          CONFIG_TCP_CONG_BBR=y
+          CONFIG_DEFAULT_TCP_CONG="bbr"
+          CONFIG_NET_SCH_FQ=y
+          # I/O
+          CONFIG_MQ_IOSCHED_KYBER=y
+          EOF
 
-          EOF_CONF
+          if [ "${{ matrix.profile }}" = "Medium" ] || [ "${{ matrix.profile }}" = "Full" ]; then
+            cat >> arch/arm64/configs/gki_defconfig << 'EOF'
+          # Medium: scheduler + memory
+          CONFIG_HZ_300=y
+          CONFIG_PREEMPT=y
+          CONFIG_ZRAM=y
+          CONFIG_ZSMALLOC=y
+          CONFIG_CRYPTO_ZSTD=y
+          CONFIG_WIREGUARD=y
+          CONFIG_PSI=y
+          EOF
+          fi
 
-          ./scripts/config --file arch/arm64/configs/gki_defconfig -e LTO_CLANG_THIN -d LTO_CLANG_FULL -d LTO_NONE
+          if [ "${{ matrix.profile }}" = "Full" ]; then
+            cat >> arch/arm64/configs/gki_defconfig << 'EOF'
+          # Full: advanced tuning
+          CONFIG_TCP_FASTOPEN=y
+          CONFIG_IP_NF_TARGET_ECN=y
+          CONFIG_UCLAMP_TASK=y
+          CONFIG_LRU_GEN=y
+          CONFIG_LRU_GEN_ENABLED=y
+          EOF
+          fi
+
+          ./scripts/config --file arch/arm64/configs/gki_defconfig \
+            -e LTO_CLANG_THIN -d LTO_CLANG_FULL -d LTO_NONE
 
       - name: Build kernel
         run: |
           cd kernel
-          make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out gki_defconfig
-          make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- O=out
+          make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- O=out gki_defconfig
+          make -j$(nproc) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- O=out
 
       - name: Package zip
         run: |
           VERSION=${GITHUB_REF_NAME}
           cp kernel/out/arch/arm64/boot/Image AnyKernel3/Image
           cd AnyKernel3
-          zip -r9 ../PureKernel-Lite-garnet-${VERSION}.zip . -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
+          zip -r9 ../PureKernel-${{ matrix.profile }}-garnet-${VERSION}.zip . \
+            -x "*.zip" -x ".git*" -x "README.md" -x "*placeholder"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PureKernel-${{ matrix.profile }}-garnet
+          path: PureKernel-${{ matrix.profile }}-garnet-*.zip
+
+  release:
+    runs-on: ubuntu-22.04
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: PureKernel-Lite-garnet-*.zip
+          files: artifacts/*.zip
           generate_release_notes: true
           draft: true
         env:
